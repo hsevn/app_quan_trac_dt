@@ -1,0 +1,4 @@
+Future<void> _deleteResult(int id) async {
+  await DBHelper.instance.deleteSurveyResult(id);
+  loadResults(); // Refresh sau khi xoá
+}
