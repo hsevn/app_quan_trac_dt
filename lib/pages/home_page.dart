@@ -77,8 +77,10 @@ class _HomePageState extends State<HomePage> {
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
               onChanged: (value) {
-                selectedL1 = value;
-                updateL2Options(value!);
+                setState(() {
+                  selectedL1 = value;
+                  updateL2Options(value!);
+                });
               },
             ),
             const SizedBox(height: 16),
@@ -90,8 +92,10 @@ class _HomePageState extends State<HomePage> {
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
               onChanged: (value) {
-                selectedL2 = value;
-                updateL3Options(value!);
+                setState(() {
+                  selectedL2 = value;
+                  updateL3Options(value!);
+                });
               },
             ),
             const SizedBox(height: 16),
