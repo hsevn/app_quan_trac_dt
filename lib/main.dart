@@ -1,25 +1,26 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'ffi_db_smoke_test.dart';
+import 'pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+  // Không còn gọi smoke test nào ở đây
+  runApp(const MyApp());
+}
 
-  String msg = 'HELLO (about to open DB)';
-  try {
-    final path = await openAndCloseDb();
-    msg = 'DB opened & closed OK at:\n$path';
-  } catch (e, s) {
-    msg = 'DB open failed:\n$e';
-    // print(s); // nếu cần xem stack
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'App Quan Trắc',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.teal,
+      ),
+      home: const HomePage(),
+    );
   }
-
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      body: Center(child: Text(msg, textAlign: TextAlign.center)),
-    ),
-  ));
 }
