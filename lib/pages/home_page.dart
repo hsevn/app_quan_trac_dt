@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import '../db/db_helper.dart';
 import 'survey_page.dart';
 import 'results_page.dart';
@@ -12,11 +11,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Dữ liệu từ SQLite
   List<Map<String, dynamic>> allData = [];
+
+  // Danh sách hiển thị theo cấp
   List<String> l1Options = [];
   List<String> l2Options = [];
   List<String> l3Options = [];
 
+  // Giá trị đã chọn
   String? selectedL1;
   String? selectedL2;
   String? selectedL3;
@@ -24,86 +27,132 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadAreaData();
+    _loadAreaData();
   }
 
-  Future<void> loadAreaData() async {
+  Future<void> _loadAreaData() async {
     final data = await DBHelper.instance.fetchAreas();
     setState(() {
       allData = data;
-      l1Options = data.map((e) => e['L1_NAME'] as String).toSet().toList();
+      l1Options = data.map((e) => e['L1_NAME'] as String).toSet().toList()
+        ..sort();
     });
   }
 
-  void updateL2Options(String l1Name) {
-    final filtered = allData
+  void _updateL2(String l1Name) {
+    final l2 = allData
         .where((e) => e['L1_NAME'] == l1Name)
         .map((e) => e['L2_CODE'] as String)
         .toSet()
-        .toList();
+        .toList()
+      ..sort();
     setState(() {
-      l2Options = filtered;
+      l2Options = l2;
       selectedL2 = null;
       selectedL3 = null;
       l3Options = [];
     });
   }
 
-  void updateL3Options(String l2Code) {
-    final filtered = allData
+  void _updateL3(String l2Code) {
+    final l3 = allData
         .where((e) => e['L2_CODE'] == l2Code)
         .map((e) => e['L3_NAME'] as String)
         .toSet()
-        .toList();
+        .toList()
+      ..sort();
     setState(() {
-      l3Options = filtered;
+      l3Options = l3;
       selectedL3 = null;
     });
   }
 
-  Widget dropdownAsButton({
-    required String hint,
-    required String? value,
+  /// Hộp thoại chọn 1 giá trị từ danh sách
+  Future<String?> _pickOne({
+    required String title,
     required List<String> items,
-    required void Function(String) onSelected,
-  }) {
-    return DropdownButton2<String>(
-      customButton: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                value ?? hint,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: value == null ? Colors.grey : Colors.black),
+    String? current,
+  }) async {
+    if (items.isEmpty) return null;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(title),
+          content: SizedBox(
+            width: 420,
+            height: 420,
+            child: Scrollbar(
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (c, i) {
+                  final value = items[i];
+                  final selected = value == current;
+                  return ListTile(
+                    dense: true,
+                    title: Text(value),
+                    trailing: selected ? const Icon(Icons.check, color: Colors.teal) : null,
+                    onTap: () => Navigator.of(ctx).pop(value),
+                  );
+                },
               ),
             ),
-            const Icon(Icons.arrow_drop_down),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Đóng'),
+            ),
           ],
-        ),
-      ),
-      items: items
-          .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
-          .toList(),
-      onChanged: (v) {
-        if (v != null) onSelected(v);
+        );
       },
-      dropdownStyleData: const DropdownStyleData(maxHeight: 280, elevation: 8),
-      menuItemStyleData: const MenuItemStyleData(height: 42),
-      openWithLongPress: false, // click là mở (nếu cần giữ nhấn thì true)
-      isExpanded: true,
+    );
+  }
+
+  /// Nút chọn dạng button (thân thiện desktop)
+  Widget _pickerButton({
+    required String label,
+    required String hint,
+    String? value,
+    VoidCallback? onPressed,
+    bool enabled = true,
+  }) {
+    final text = value ?? hint;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        const SizedBox(height: 6),
+        OutlinedButton(
+          onPressed: enabled ? onPressed : null,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            alignment: Alignment.centerLeft,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: value == null ? Colors.grey : Colors.black,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final canPickL2 = selectedL1 != null && l2Options.isNotEmpty;
+    final canPickL3 = selectedL2 != null && l3Options.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chọn Vị Trí Quan Trắc'),
@@ -114,43 +163,63 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Cấp L1:'), const SizedBox(height: 6),
-            dropdownAsButton(
+            _pickerButton(
+              label: 'Cấp L1:',
               hint: 'Chọn cấp L1',
               value: selectedL1,
-              items: l1Options,
-              onSelected: (v) {
-                setState(() {
-                  selectedL1 = v;
-                  updateL2Options(v);
-                });
+              onPressed: () async {
+                final pick = await _pickOne(
+                  title: 'Chọn cấp L1',
+                  items: l1Options,
+                  current: selectedL1,
+                );
+                if (pick != null) {
+                  setState(() {
+                    selectedL1 = pick;
+                  });
+                  _updateL2(pick);
+                }
               },
             ),
             const SizedBox(height: 16),
 
-            const Text('Cấp L2:'), const SizedBox(height: 6),
-            dropdownAsButton(
+            _pickerButton(
+              label: 'Cấp L2:',
               hint: 'Chọn cấp L2',
               value: selectedL2,
-              items: l2Options,
-              onSelected: (v) {
-                setState(() {
-                  selectedL2 = v;
-                  updateL3Options(v);
-                });
+              enabled: canPickL2,
+              onPressed: () async {
+                final pick = await _pickOne(
+                  title: 'Chọn cấp L2',
+                  items: l2Options,
+                  current: selectedL2,
+                );
+                if (pick != null) {
+                  setState(() {
+                    selectedL2 = pick;
+                  });
+                  _updateL3(pick);
+                }
               },
             ),
             const SizedBox(height: 16),
 
-            const Text('Cấp L3:'), const SizedBox(height: 6),
-            dropdownAsButton(
+            _pickerButton(
+              label: 'Cấp L3:',
               hint: 'Chọn cấp L3',
               value: selectedL3,
-              items: l3Options,
-              onSelected: (v) {
-                setState(() {
-                  selectedL3 = v;
-                });
+              enabled: canPickL3,
+              onPressed: () async {
+                final pick = await _pickOne(
+                  title: 'Chọn cấp L3',
+                  items: l3Options,
+                  current: selectedL3,
+                );
+                if (pick != null) {
+                  setState(() {
+                    selectedL3 = pick;
+                  });
+                }
               },
             ),
 
@@ -165,6 +234,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Xem kết quả đã nhập'),
             ),
             const SizedBox(height: 12),
+
             if (selectedL1 != null && selectedL2 != null && selectedL3 != null)
               ElevatedButton(
                 onPressed: () {

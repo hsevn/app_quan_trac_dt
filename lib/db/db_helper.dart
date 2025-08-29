@@ -9,14 +9,10 @@ class DBHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('app_quan_trac_data.sqlite');
-    return _database!;
-  }
-
-  Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-    return await openDatabase(path);
+    final path = join(dbPath, 'app_quan_trac_data.sqlite');
+    _database = await openDatabase(path);
+    return _database!;
   }
 
   Future<List<Map<String, dynamic>>> fetchAreas() async {
