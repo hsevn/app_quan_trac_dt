@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../data/db_helper.dart';
 
 class ResultsPage extends StatefulWidget {
@@ -40,28 +41,52 @@ class _ResultsPageState extends State<ResultsPage> {
               itemBuilder: (context, index) {
                 final item = results[index];
                 return Card(
-                  margin: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
-                    title: Text('${item['area_l1']} - ${item['area_l2']} - ${item['area_l3']}'),
-                    subtitle: Text('Ánh sáng: ${item['light']} | Nhiệt độ: ${item['temperature']}'),
+                    title: Text('Vị trí: ${item['position'] ?? '---'}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            'Ánh sáng: ${item['light'] ?? '---'} | OWAS: ${item['owas'] ?? '---'}'),
+                        if (item['image'] != null &&
+                            File(item['image']).existsSync())
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Image.file(
+                              File(item['image']),
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                      ],
+                    ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
-                            title: const Text('Xoá'),
-                            content: const Text('Bạn có chắc muốn xoá dòng này?'),
+                            title: const Text('Xoá kết quả'),
+                            content:
+                                const Text('Bạn có chắc muốn xoá dòng này?'),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Huỷ')),
-                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xoá')),
+                              TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Huỷ')),
+                              TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, true),
+                                  child: const Text('Xoá')),
                             ],
                           ),
                         );
                         if (confirm == true) {
-                          await _deleteResult(item['id']);
+                          await _deleteResult(item['id'] as int);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Đã xoá')));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Đã xoá')));
                           }
                         }
                       },

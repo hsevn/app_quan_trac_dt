@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import '../data/db_helper.dart';
 
 class ResultsPage extends StatefulWidget {
@@ -19,21 +18,27 @@ class _ResultsPageState extends State<ResultsPage> {
   }
 
   Future<void> _loadResults() async {
-    final data = await DBHelper().getAllResults();
+    final data = await DBHelper.instance.getAllResults();
     setState(() {
       results = data;
     });
   }
 
   Future<void> _deleteResult(int id) async {
-    await DBHelper().deleteResult(id);
+    await DBHelper.instance.deleteResult(id);
     _loadResults();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Kết quả đã nhập')),
+      appBar: AppBar(
+        title: const Text('Kết quả đã nhập'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: results.isEmpty
           ? const Center(child: Text('Chưa có dữ liệu nào.'))
           : ListView.builder(
@@ -43,22 +48,8 @@ class _ResultsPageState extends State<ResultsPage> {
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
-                    title: Text('${item['l1']} - ${item['l2']} - ${item['l3']}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Ánh sáng: ${item['light']} | OWAS: ${item['owas']}'),
-                        if (item['image'] != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Image.file(
-                              File(item['image']),
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                      ],
-                    ),
+                    title: Text('${item['position'] ?? ''}'),
+                    subtitle: Text('Ánh sáng: ${item['light'] ?? ''} | OWAS: ${item['owas'] ?? ''}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {

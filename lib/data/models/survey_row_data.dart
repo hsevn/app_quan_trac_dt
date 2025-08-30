@@ -1,12 +1,22 @@
 class SurveyRowData {
-  String position = '';
-  double light = 0;
-  double temp = 0;
-  double humidity = 0;
+  int? id;
+  String position;
+  double light;
+  double temp;
+  double humidity;
 
-  SurveyRowData.empty();
+  SurveyRowData({
+    this.id,
+    this.position = '',
+    this.light = 0,
+    this.temp = 0,
+    this.humidity = 0,
+  });
+
+  SurveyRowData.empty() : this();
 
   Map<String, dynamic> toMap() => {
+        'id': id,
         'position': position,
         'light': light,
         'temp': temp,
@@ -14,10 +24,12 @@ class SurveyRowData {
       };
 
   factory SurveyRowData.fromMap(Map<String, dynamic> map) {
-    return SurveyRowData.empty()
-      ..position = map['position'] ?? ''
-      ..light = map['light']?.toDouble() ?? 0.0
-      ..temp = map['temp']?.toDouble() ?? 0.0
-      ..humidity = map['humidity']?.toDouble() ?? 0.0;
+    return SurveyRowData(
+      id: map['id'],
+      position: map['position'] ?? '',
+      light: (map['light'] as num?)?.toDouble() ?? 0,
+      temp: (map['temp'] as num?)?.toDouble() ?? 0,
+      humidity: (map['humidity'] as num?)?.toDouble() ?? 0,
+    );
   }
 }
