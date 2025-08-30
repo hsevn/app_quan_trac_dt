@@ -43,7 +43,6 @@ class MainMenu extends StatelessWidget {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // Responsive: phone ~4 cột, tablet/desktop nhiều hơn
           final double width = constraints.maxWidth;
           int crossAxisCount;
           if (width < 560) {
@@ -56,7 +55,6 @@ class MainMenu extends StatelessWidget {
             crossAxisCount = 10;
           }
 
-          // Kích cỡ icon & nhãn theo platform width
           final double iconSize = width < 560 ? 28 : 32;
           final double fontSize = width < 560 ? 11 : 12;
 
@@ -66,8 +64,7 @@ class MainMenu extends StatelessWidget {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 12,
               mainAxisSpacing: 16,
-              // mainAxisExtent giúp item có chiều cao nhỏ gọn như launcher
-              mainAxisExtent: iconSize + 28 + 18, // icon + text + padding
+              mainAxisExtent: iconSize + 28 + 18,
             ),
             itemCount: items.length,
             itemBuilder: (context, i) {
@@ -113,7 +110,6 @@ class _LauncherIcon extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Vòng tròn mờ nhẹ kiểu Material You
           Container(
             width: iconSize + 20,
             height: iconSize + 20,
@@ -124,12 +120,11 @@ class _LauncherIcon extends StatelessWidget {
             alignment: Alignment.center,
             child: Icon(icon, size: iconSize, color: iconColor),
           ),
-          const SizedBox(height: 6),
-          SizedBox(
-            height: 22,
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
               label,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
