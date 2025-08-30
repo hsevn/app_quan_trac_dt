@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../db/db_helper.dart';
+import 'dart:io';
+import '../data/db_helper.dart';
 
 class ResultsPage extends StatefulWidget {
   const ResultsPage({super.key});
@@ -14,46 +15,71 @@ class _ResultsPageState extends State<ResultsPage> {
   @override
   void initState() {
     super.initState();
-    loadResults();
+    _loadResults();
   }
 
-  Future<void> loadResults() async {
-    final data = await DBHelper.instance.getAllSurveyResults();
+  Future<void> _loadResults() async {
+    final data = await DBHelper().getAllResults();
     setState(() {
       results = data;
     });
   }
 
   Future<void> _deleteResult(int id) async {
-    await DBHelper.instance.deleteSurveyResult(id);
-    loadResults();
+    await DBHelper().deleteResult(id);
+    _loadResults();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kết Quả Quan Trắc'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Kết quả đã nhập')),
       body: results.isEmpty
-          ? const Center(child: Text('Chưa có dữ liệu'))
+          ? const Center(child: Text('Chưa có dữ liệu nào.'))
           : ListView.builder(
               itemCount: results.length,
               itemBuilder: (context, index) {
                 final item = results[index];
                 return Card(
-                  margin: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
-                    title: Text('${item['parameter']} = ${item['value']}'),
-                    subtitle: Text(
-                      'Vị trí: ${item['l1_code']} / ${item['l2_code']} / ${item['l3_code']}\n'
-                      'Tên vị trí cụ thể: ${item['custom_name'] ?? '---'}\n'
-                      'Thời gian: ${item['created_at']}',
+                    title: Text('${item['l1']} - ${item['l2']} - ${item['l3']}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Ánh sáng: ${item['light']} | OWAS: ${item['owas']}'),
+                        if (item['image'] != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Image.file(
+                              File(item['image']),
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                      ],
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteResult(item['id']),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Xoá kết quả'),
+                            content: const Text('Bạn có chắc muốn xoá dòng này?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Huỷ')),
+                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xoá')),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await _deleteResult(item['id']);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Đã xoá')));
+                          }
+                        }
+                      },
                     ),
                   ),
                 );

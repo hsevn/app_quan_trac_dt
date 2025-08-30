@@ -1,10 +1,8 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'pages/home_page.dart';
+import 'main_menu.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Không còn gọi smoke test nào ở đây
   runApp(const MyApp());
 }
 
@@ -14,13 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'App Quan Trắc',
+      title: 'Ứng dụng Quan Trắc',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        colorSchemeSeed: Colors.blue,
         useMaterial3: true,
-        colorSchemeSeed: Colors.teal,
       ),
-      home: const HomePage(),
+      home: const MainMenu(),
     );
   }
 }

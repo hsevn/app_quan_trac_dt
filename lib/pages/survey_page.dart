@@ -1,86 +1,142 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../db/db_helper.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import '../data/db_helper.dart';
 
 class SurveyPage extends StatefulWidget {
-  final String l1, l2, l3;
-  const SurveyPage({super.key, required this.l1, required this.l2, required this.l3});
+  const SurveyPage({super.key});
 
   @override
   State<SurveyPage> createState() => _SurveyPageState();
 }
 
 class _SurveyPageState extends State<SurveyPage> {
-  final TextEditingController _valueController = TextEditingController();
-  final TextEditingController _paramController = TextEditingController();
-  final TextEditingController _customNameController = TextEditingController();
+  String? selectedL1, selectedL2, selectedL3;
+  final l1List = <String>[];
+  final l2List = <String>[]; // TODO: update nếu cần
+  final l3List = <String>[]; // TODO: update nếu cần
 
-  void _saveData() async {
-    final param = _paramController.text.trim();
-    final value = _valueController.text.trim();
-    final customName = _customNameController.text.trim();
+  String? selectedImagePath;
 
-    if (param.isEmpty || value.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
-      );
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadAreas();
+  }
 
+  Future<void> _loadAreas() async {
+    final areas = await DBHelper().fetchAreas();
+    setState(() {
+      l1List.addAll(areas.map((e) => e['name_L1'] as String));
+    });
+  }
+
+  Future<void> _saveData() async {
     final data = {
-      'l1_code': widget.l1,
-      'l2_code': widget.l2,
-      'l3_code': widget.l3,
-      'custom_name': customName,
-      'parameter': param,
-      'value': value,
-      'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+      'l1': selectedL1,
+      'l2': selectedL2,
+      'l3': selectedL3,
+      'light': '',
+      'temperature': '',
+      'humidity': '',
+      'wind': '',
+      'radiation': '',
+      'noise': '',
+      'electric': '',
+      'owas': '',
+      'question': '',
+      'answer': '',
+      'image': selectedImagePath,
+      'timestamp': DateTime.now().toIso8601String(),
     };
 
-    await DBHelper.instance.insertSurveyResult(data);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã lưu kết quả')),
-    );
-
-    _paramController.clear();
-    _valueController.clear();
-    _customNameController.clear();
+    try {
+      final id = await DBHelper().insertResult(data);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Đã lưu kết quả (ID: $id)')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Lỗi lưu: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Nhập dữ liệu - ${widget.l3}')),
-      body: Padding(
+      appBar: AppBar(title: const Text('Nhập Kết Quả Quan Trắc')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _customNameController,
-              decoration: const InputDecoration(
-                labelText: 'Tên vị trí cụ thể (nhập tay)',
-                border: OutlineInputBorder(),
+        child: Column(children: [
+          Row(children: [
+            Expanded(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Chọn L1'),
+                value: selectedL1,
+                items: l1List
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) => setState(() => selectedL1 = val),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _paramController,
-              decoration: const InputDecoration(labelText: 'Chỉ tiêu'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Chọn L2'),
+                value: selectedL2,
+                items: l2List
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) => setState(() => selectedL2 = val),
+              ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _valueController,
-              decoration: const InputDecoration(labelText: 'Giá trị đo'),
-              keyboardType: TextInputType.number,
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Chọn L3'),
+                value: selectedL3,
+                items: l3List
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) => setState(() => selectedL3 = val),
+              ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveData,
-              child: const Text('Lưu'),
+          ]),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Chụp / Chọn ảnh'),
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles(type: FileType.image);
+              if (result != null && result.files.single.path != null) {
+                setState(() {
+                  selectedImagePath = result.files.single.path!;
+                });
+              }
+            },
+          ),
+          if (selectedImagePath != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Image.file(
+                File(selectedImagePath!),
+                height: 150,
+              ),
             ),
-          ],
-        ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _saveData,
+            child: const Text('Lưu kết quả'),
+          ),
+        ]),
       ),
     );
   }
